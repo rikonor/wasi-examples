@@ -1,0 +1,3 @@
+service : {
+    "eval" : (text) -> (text) query;
+};

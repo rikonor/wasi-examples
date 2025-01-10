@@ -1,0 +1,14 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+boa_engine = "0.20.0"
+candid = "0.10"
+ic-cdk = "0.16"
+ic-cdk-timers = "0.10"
+wasi-shim = { path = "../../wasi-shim" }
