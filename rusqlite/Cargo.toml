@@ -1,0 +1,18 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid = "0.10"
+ic-cdk = "0.16"
+ic-cdk-timers = "0.10"
+wasi-shim = "0.2.0"
+stable-fs = "0.7.0"
+rusqlite = { git = "https://github.com/rusqlite/rusqlite.git", rev = "903677bda605029d53a46bf546ab53240191a30f", features = [
+    "bundled",
+    "wasm32-wasi-vfs",
+] }

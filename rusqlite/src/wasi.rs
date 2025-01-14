@@ -1,0 +1,52 @@
+use crate::polyfill;
+
+pub(crate) fn inject_shims() {
+    unsafe {
+        wasi_shim::core::args::set::args_get(polyfill::args_get);
+        wasi_shim::core::args::set::args_sizes_get(polyfill::args_sizes_get);
+        wasi_shim::core::clock::set::clock_res_get(polyfill::clock_res_get);
+        wasi_shim::core::clock::set::clock_time_get(polyfill::clock_time_get);
+        wasi_shim::core::environ::set::environ_get(polyfill::environ_get);
+        wasi_shim::core::environ::set::environ_sizes_get(polyfill::environ_sizes_get);
+        wasi_shim::core::fd::set::fd_advise(polyfill::fd_advise);
+        wasi_shim::core::fd::set::fd_allocate(polyfill::fd_allocate);
+        wasi_shim::core::fd::set::fd_close(polyfill::fd_close);
+        wasi_shim::core::fd::set::fd_datasync(polyfill::fd_datasync);
+        wasi_shim::core::fd::set::fd_fdstat_get(polyfill::fd_fdstat_get);
+        wasi_shim::core::fd::set::fd_fdstat_set_flags(polyfill::fd_fdstat_set_flags);
+        wasi_shim::core::fd::set::fd_fdstat_set_rights(polyfill::fd_fdstat_set_rights);
+        wasi_shim::core::fd::set::fd_filestat_get(polyfill::fd_filestat_get);
+        wasi_shim::core::fd::set::fd_filestat_set_size(polyfill::fd_filestat_set_size);
+        wasi_shim::core::fd::set::fd_filestat_set_times(polyfill::fd_filestat_set_times);
+        wasi_shim::core::fd::set::fd_pread(polyfill::fd_pread);
+        wasi_shim::core::fd::set::fd_prestat_dir_name(polyfill::fd_prestat_dir_name);
+        wasi_shim::core::fd::set::fd_prestat_get(polyfill::fd_prestat_get);
+        wasi_shim::core::fd::set::fd_pwrite(polyfill::fd_pwrite);
+        wasi_shim::core::fd::set::fd_read(polyfill::fd_read);
+        wasi_shim::core::fd::set::fd_readdir(polyfill::fd_readdir);
+        wasi_shim::core::fd::set::fd_renumber(polyfill::fd_renumber);
+        wasi_shim::core::fd::set::fd_seek(polyfill::fd_seek);
+        wasi_shim::core::fd::set::fd_sync(polyfill::fd_sync);
+        wasi_shim::core::fd::set::fd_tell(polyfill::fd_tell);
+        wasi_shim::core::fd::set::fd_write(polyfill::fd_write);
+        wasi_shim::core::path::set::path_create_directory(polyfill::path_create_directory);
+        wasi_shim::core::path::set::path_filestat_get(polyfill::path_filestat_get);
+        wasi_shim::core::path::set::path_filestat_set_times(polyfill::path_filestat_set_times);
+        wasi_shim::core::path::set::path_link(polyfill::path_link);
+        wasi_shim::core::path::set::path_open(polyfill::path_open);
+        wasi_shim::core::path::set::path_readlink(polyfill::path_readlink);
+        wasi_shim::core::path::set::path_remove_directory(polyfill::path_remove_directory);
+        wasi_shim::core::path::set::path_rename(polyfill::path_rename);
+        wasi_shim::core::path::set::path_symlink(polyfill::path_symlink);
+        wasi_shim::core::path::set::path_unlink_file(polyfill::path_unlink_file);
+        wasi_shim::core::poll::set::poll_oneoff(polyfill::poll_oneoff);
+        wasi_shim::core::proc::set::proc_exit(polyfill::proc_exit);
+        wasi_shim::core::proc::set::proc_raise(polyfill::proc_raise);
+        wasi_shim::core::random::set::random_get(polyfill::random_get);
+        wasi_shim::core::sched::set::sched_yield(polyfill::sched_yield);
+        wasi_shim::core::sock::set::sock_accept(polyfill::sock_accept);
+        wasi_shim::core::sock::set::sock_recv(polyfill::sock_recv);
+        wasi_shim::core::sock::set::sock_send(polyfill::sock_send);
+        wasi_shim::core::sock::set::sock_shutdown(polyfill::sock_shutdown);
+    }
+}
