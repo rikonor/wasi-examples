@@ -16,3 +16,4 @@ rusqlite = { git = "https://github.com/rusqlite/rusqlite.git", rev = "903677bda6
     "bundled",
     "wasm32-wasi-vfs",
 ] }
+scopeguard = "1.2.0"

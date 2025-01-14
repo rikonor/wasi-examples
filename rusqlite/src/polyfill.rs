@@ -3,6 +3,7 @@ use std::{
     str::from_utf8_unchecked,
 };
 
+use scopeguard::defer;
 use stable_fs::{
     fs::{
         self, DstBuf as StableFsDstBuf, FdFlags as StableFsFdFlags, FdStat, OpenFlags,
@@ -554,13 +555,11 @@ pub fn path_filestat_get(
             Err(_) => return ERRNO_INVAL, // TODO
         };
 
-        let md = fs.metadata(_fd);
+        let fs = scopeguard::guard(fs, |mut fs| {
+            let _ = fs.close(_fd);
+        });
 
-        if let Err(_err) = fs.close(fd) {
-            return ERRNO_INVAL; // TODO
-        };
-
-        let md = match md {
+        let md = match fs.metadata(_fd) {
             Ok(v) => v,
             Err(_) => return ERRNO_INVAL, // TODO
         };
@@ -612,6 +611,10 @@ pub fn path_filestat_set_times(
             Err(_) => return ERRNO_INVAL, // TODO
         };
 
+        let mut fs = scopeguard::guard(fs, |mut fs| {
+            let _ = fs.close(_fd);
+        });
+
         let mut md = match fs.metadata(_fd) {
             Ok(v) => v,
             Err(_) => return ERRNO_INVAL, // TODO
@@ -639,10 +642,7 @@ pub fn path_filestat_set_times(
             return ERRNO_INVAL; // TODO
         }
 
-        match fs.close(fd) {
-            Ok(_) => ERRNO_SUCCESS,
-            Err(_) => ERRNO_INVAL, // TODO
-        }
+        ERRNO_SUCCESS
     })
 }
 
@@ -670,13 +670,17 @@ pub fn path_link(
     };
 
     FILESYSTEM.with(|fs| {
-        match fs
-            .borrow_mut()
-            .create_hard_link(old_fd, opath, new_fd, npath)
-        {
-            Ok(_) => ERRNO_SUCCESS,
-            Err(_) => ERRNO_INVAL, // TODO
+        let mut fs = fs.borrow_mut();
+
+        let _fd = match fs.create_hard_link(old_fd, opath, new_fd, npath) {
+            Ok(v) => v,
+            Err(_) => return ERRNO_INVAL, // TODO
+        };
+        defer! {
+            let _ = fs.close(_fd);
         }
+
+        ERRNO_SUCCESS
     })
 }
 
@@ -718,6 +722,9 @@ pub fn path_open(
             Ok(v) => v,
             Err(_) => return ERRNO_INVAL, // TODO
         };
+        defer! {
+            let _ = fs.close(_fd);
+        }
 
         unsafe {
             *rp0 = _fd;
@@ -775,10 +782,17 @@ pub fn path_rename(
     };
 
     FILESYSTEM.with(|fs| {
-        match fs.borrow_mut().rename(fd, opath, new_fd, npath) {
-            Ok(_) => ERRNO_SUCCESS,
-            Err(_) => ERRNO_INVAL, // TODO
+        let mut fs = fs.borrow_mut();
+
+        let _fd = match fs.rename(fd, opath, new_fd, npath) {
+            Ok(v) => v,
+            Err(_) => return ERRNO_INVAL, // TODO
+        };
+        defer! {
+            let _ = fs.close(_fd);
         }
+
+        ERRNO_SUCCESS
     })
 }
 
