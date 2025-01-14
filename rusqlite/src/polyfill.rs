@@ -33,16 +33,11 @@ const SECOND: u64 = 1000 * MILLISECOND;
 
 use crate::FILESYSTEM;
 
-// args
-
 pub fn args_get(_argv: *mut *mut u8, _argv_buf: *mut u8) -> Errno {
-    ic_cdk::println!("args_get");
     ERRNO_NOP
 }
 
 pub fn args_sizes_get(rp0: *mut Size, rp1: *mut Size) -> Errno {
-    ic_cdk::println!("args_sizes_get");
-
     unsafe {
         *rp0 = 0;
         *rp1 = 0;
@@ -51,11 +46,7 @@ pub fn args_sizes_get(rp0: *mut Size, rp1: *mut Size) -> Errno {
     ERRNO_NOP
 }
 
-// clock
-
 pub fn clock_res_get(_id: Clockid, rp0: *mut Timestamp) -> Errno {
-    ic_cdk::println!("clock_res_get");
-
     #[allow(clippy::identity_op)]
     unsafe {
         *rp0 = 1 * SECOND;
@@ -65,8 +56,6 @@ pub fn clock_res_get(_id: Clockid, rp0: *mut Timestamp) -> Errno {
 }
 
 pub fn clock_time_get(_id: Clockid, _precision: Timestamp, rp0: *mut Timestamp) -> Errno {
-    ic_cdk::println!("clock_time_get");
-
     unsafe {
         *rp0 = ic_cdk::api::time();
     }
@@ -74,11 +63,7 @@ pub fn clock_time_get(_id: Clockid, _precision: Timestamp, rp0: *mut Timestamp) 
     ERRNO_SUCCESS
 }
 
-// environ
-
 pub fn environ_sizes_get(rp0: *mut Size, rp1: *mut Size) -> Errno {
-    ic_cdk::println!("environ_sizes_get");
-
     unsafe {
         *rp0 = 0;
         *rp1 = 0;
@@ -88,15 +73,10 @@ pub fn environ_sizes_get(rp0: *mut Size, rp1: *mut Size) -> Errno {
 }
 
 pub fn environ_get(_environ: *mut *mut u8, _environ_buf: *mut u8) -> Errno {
-    ic_cdk::println!("environ_get");
     ERRNO_SUCCESS
 }
 
-// fd
-
 pub fn fd_advise(fd: Fd, offset: Filesize, len: Filesize, advice: Advice) -> Errno {
-    ic_cdk::println!("fd_advise");
-
     let advice = match fs::Advice::try_from(advice.raw()) {
         Ok(v) => v,
         Err(_) => return ERRNO_INVAL,
@@ -109,8 +89,6 @@ pub fn fd_advise(fd: Fd, offset: Filesize, len: Filesize, advice: Advice) -> Err
 }
 
 pub fn fd_allocate(fd: Fd, offset: Filesize, len: Filesize) -> Errno {
-    ic_cdk::println!("fd_allocate");
-
     FILESYSTEM.with(|fs| match fs.borrow_mut().allocate(fd, offset, len) {
         Ok(_) => ERRNO_SUCCESS,
         Err(_) => ERRNO_INVAL, // TODO
@@ -118,8 +96,6 @@ pub fn fd_allocate(fd: Fd, offset: Filesize, len: Filesize) -> Errno {
 }
 
 pub fn fd_close(fd: Fd) -> Errno {
-    ic_cdk::println!("fd_close");
-
     FILESYSTEM.with(|fs| match fs.borrow_mut().close(fd) {
         Ok(_) => ERRNO_SUCCESS,
         Err(_) => ERRNO_INVAL, // TODO
@@ -127,8 +103,6 @@ pub fn fd_close(fd: Fd) -> Errno {
 }
 
 pub fn fd_datasync(fd: Fd) -> Errno {
-    ic_cdk::println!("fd_datasync");
-
     FILESYSTEM.with(|fs| match fs.borrow_mut().flush(fd) {
         Ok(_) => ERRNO_SUCCESS,
         Err(_) => ERRNO_INVAL, // TODO
@@ -136,8 +110,6 @@ pub fn fd_datasync(fd: Fd) -> Errno {
 }
 
 pub fn fd_fdstat_get(fd: Fd, rp0: *mut Fdstat) -> Errno {
-    ic_cdk::println!("fd_fdstat_get");
-
     let (ftype, fdstat) = match FILESYSTEM.with(|fs| fs.borrow().get_stat(fd)) {
         Ok(v) => v,
         Err(_) => return ERRNO_INVAL, // TODO
@@ -156,8 +128,6 @@ pub fn fd_fdstat_get(fd: Fd, rp0: *mut Fdstat) -> Errno {
 }
 
 pub fn fd_fdstat_set_flags(fd: Fd, flags: Fdflags) -> Errno {
-    ic_cdk::println!("fd_fdstat_set_flags");
-
     let (_, mut fdstat) = match FILESYSTEM.with(|fs| fs.borrow().get_stat(fd)) {
         Ok(v) => v,
         Err(_) => return ERRNO_INVAL, // TODO
@@ -177,8 +147,6 @@ pub fn fd_fdstat_set_flags(fd: Fd, flags: Fdflags) -> Errno {
 }
 
 pub fn fd_fdstat_set_rights(fd: Fd, fs_rights_base: Rights, fs_rights_inheriting: Rights) -> Errno {
-    ic_cdk::println!("fd_fdstat_set_rights");
-
     let (_, mut fdstat) = match FILESYSTEM.with(|fs| fs.borrow().get_stat(fd)) {
         Ok(v) => v,
         Err(_) => return ERRNO_INVAL, // TODO
@@ -194,8 +162,6 @@ pub fn fd_fdstat_set_rights(fd: Fd, fs_rights_base: Rights, fs_rights_inheriting
 }
 
 pub fn fd_filestat_get(fd: Fd, rp0: *mut Filestat) -> Errno {
-    ic_cdk::println!("fd_filestat_get");
-
     let md = match FILESYSTEM.with(|fs| fs.borrow().metadata(fd)) {
         Ok(v) => v,
         Err(_) => return ERRNO_INVAL, // TODO
@@ -218,8 +184,6 @@ pub fn fd_filestat_get(fd: Fd, rp0: *mut Filestat) -> Errno {
 }
 
 pub fn fd_filestat_set_size(fd: Fd, size: Filesize) -> Errno {
-    ic_cdk::println!("fd_filestat_set_size");
-
     FILESYSTEM.with(|fs| match fs.borrow_mut().set_file_size(fd, size) {
         Ok(_) => ERRNO_SUCCESS,
         Err(_) => ERRNO_INVAL, // TODO
@@ -232,8 +196,6 @@ pub fn fd_filestat_set_times(
     mut mtim: Timestamp,
     fst_flags: Fstflags,
 ) -> Errno {
-    ic_cdk::println!("fd_filestat_set_times");
-
     if let Err(_err) = FILESYSTEM.with(|fs| fs.borrow().metadata(fd)) {
         return ERRNO_INVAL; // TODO
     };
@@ -270,8 +232,6 @@ pub fn fd_pread(
     offset: Filesize,
     rp0: *mut Size,
 ) -> Errno {
-    ic_cdk::println!("fd_pread");
-
     if fd <= FD_STDERR {
         return ERRNO_INVAL;
     }
@@ -296,8 +256,6 @@ pub fn fd_pread(
 }
 
 pub fn fd_prestat_dir_name(fd: Fd, path: *mut u8, path_len: Size) -> Errno {
-    ic_cdk::println!("fd_prestat_dir_name");
-
     if fd != FILESYSTEM.with(|fs| fs.borrow().root_fd()) {
         return ERRNO_BADF;
     }
@@ -314,8 +272,6 @@ pub fn fd_prestat_dir_name(fd: Fd, path: *mut u8, path_len: Size) -> Errno {
 }
 
 pub fn fd_prestat_get(fd: Fd, rp0: *mut Prestat) -> Errno {
-    ic_cdk::println!("fd_prestat_get");
-
     if fd != FILESYSTEM.with(|fs| fs.borrow().root_fd()) {
         return ERRNO_BADF;
     }
@@ -341,8 +297,6 @@ pub fn fd_pwrite(
     offset: Filesize,
     rp0: *mut Size,
 ) -> Errno {
-    ic_cdk::println!("fd_pwrite");
-
     if fd <= FD_STDERR {
         return ERRNO_NOP;
     }
@@ -367,8 +321,6 @@ pub fn fd_pwrite(
 }
 
 pub fn fd_read(fd: Fd, iovs: *const Iovec, iovs_len: i32, rp0: *mut Size) -> Errno {
-    ic_cdk::println!("fd_read");
-
     if fd <= FD_STDERR {
         return ERRNO_INVAL;
     }
@@ -393,8 +345,6 @@ pub fn fd_read(fd: Fd, iovs: *const Iovec, iovs_len: i32, rp0: *mut Size) -> Err
 }
 
 pub fn fd_readdir(fd: Fd, buf: *mut u8, buf_len: Size, cookie: Dircookie, rp0: *mut Size) -> Errno {
-    ic_cdk::println!("fd_readdir");
-
     if cookie as i64 == DIRCOOKIE_NEG_ONE {
         unsafe {
             *rp0 = 0;
@@ -478,8 +428,6 @@ pub fn fd_readdir(fd: Fd, buf: *mut u8, buf_len: Size, cookie: Dircookie, rp0: *
 }
 
 pub fn fd_renumber(fd: Fd, to: Fd) -> Errno {
-    ic_cdk::println!("fd_renumber");
-
     FILESYSTEM.with(|fs| match fs.borrow_mut().renumber(fd, to) {
         Ok(_) => ERRNO_SUCCESS,
         Err(_) => ERRNO_INVAL, // TODO
@@ -487,8 +435,6 @@ pub fn fd_renumber(fd: Fd, to: Fd) -> Errno {
 }
 
 pub fn fd_seek(fd: Fd, offset: Filedelta, whence: Whence, rp0: *mut Filesize) -> Errno {
-    ic_cdk::println!("fd_seek");
-
     if fd <= FD_STDERR {
         return ERRNO_INVAL;
     }
@@ -514,8 +460,6 @@ pub fn fd_seek(fd: Fd, offset: Filedelta, whence: Whence, rp0: *mut Filesize) ->
 }
 
 pub fn fd_sync(fd: Fd) -> Errno {
-    ic_cdk::println!("fd_sync");
-
     FILESYSTEM.with(|fs| match fs.borrow_mut().flush(fd) {
         Ok(_) => ERRNO_SUCCESS,
         Err(_) => ERRNO_INVAL, // TODO
@@ -523,8 +467,6 @@ pub fn fd_sync(fd: Fd) -> Errno {
 }
 
 pub fn fd_tell(fd: Fd, rp0: *mut Filesize) -> Errno {
-    ic_cdk::println!("fd_tell");
-
     if fd <= FD_STDERR {
         return ERRNO_BADF;
     }
@@ -542,8 +484,6 @@ pub fn fd_tell(fd: Fd, rp0: *mut Filesize) -> Errno {
 }
 
 pub fn fd_write(fd: Fd, iovs: *const Iovec, iovs_len: i32, rp0: *mut Size) -> Errno {
-    ic_cdk::println!("fd_write");
-
     if fd <= FD_STDERR {
         return ERRNO_NOP;
     }
@@ -567,11 +507,7 @@ pub fn fd_write(fd: Fd, iovs: *const Iovec, iovs_len: i32, rp0: *mut Size) -> Er
     ERRNO_SUCCESS
 }
 
-// path
-
 pub fn path_create_directory(fd: Fd, path: *const u8, path_len: i32) -> Errno {
-    ic_cdk::println!("path_create_directory");
-
     let dirname = unsafe {
         from_utf8_unchecked(from_raw_parts(
             path,              // data
@@ -597,8 +533,6 @@ pub fn path_filestat_get(
     path_len: i32,
     rp0: *mut Filestat,
 ) -> Errno {
-    ic_cdk::println!("path_filestat_get");
-
     let fname = unsafe {
         from_utf8_unchecked(from_raw_parts(
             path,              // data
@@ -657,8 +591,6 @@ pub fn path_filestat_set_times(
     mut mtim: Timestamp,
     fst_flags: Fstflags,
 ) -> Errno {
-    ic_cdk::println!("path_filestat_set_times");
-
     let fname = unsafe {
         from_utf8_unchecked(from_raw_parts(
             path,              // data
@@ -723,8 +655,6 @@ pub fn path_link(
     new_path: *const u8,
     new_path_len: i32,
 ) -> Errno {
-    ic_cdk::println!("path_link");
-
     let opath = unsafe {
         from_utf8_unchecked(from_raw_parts(
             old_path,              // data
@@ -762,8 +692,6 @@ pub fn path_open(
     fdflags: Fdflags,
     rp0: *mut Fd,
 ) -> Errno {
-    ic_cdk::println!("path_open");
-
     let fname = unsafe {
         from_utf8_unchecked(from_raw_parts(
             path,              // data
@@ -807,14 +735,10 @@ pub fn path_readlink(
     _buf_len: Size,
     _rp0: *mut Size,
 ) -> Errno {
-    ic_cdk::println!("path_readlink");
-
     ERRNO_NOTSUP
 }
 
 pub fn path_remove_directory(fd: Fd, path: *const u8, path_len: i32) -> Errno {
-    ic_cdk::println!("path_remove_directory");
-
     let fname = unsafe {
         from_utf8_unchecked(from_raw_parts(
             path,              // data
@@ -836,8 +760,6 @@ pub fn path_rename(
     new_path: *const u8,
     new_path_len: i32,
 ) -> Errno {
-    ic_cdk::println!("path_rename");
-
     let opath = unsafe {
         from_utf8_unchecked(from_raw_parts(
             old_path,              // data
@@ -867,14 +789,10 @@ pub fn path_symlink(
     _new_path: *const u8,
     _new_path_len: i32,
 ) -> Errno {
-    ic_cdk::println!("path_symlink");
-
     ERRNO_NOTSUP
 }
 
 pub fn path_unlink_file(fd: Fd, path: *const u8, path_len: i32) -> Errno {
-    ic_cdk::println!("path_unlink_file");
-
     let fname = unsafe {
         from_utf8_unchecked(from_raw_parts(
             path,              // data
@@ -888,54 +806,32 @@ pub fn path_unlink_file(fd: Fd, path: *const u8, path_len: i32) -> Errno {
     })
 }
 
-// poll
-
 pub fn poll_oneoff(
     _in_: *const Subscription,
     _out: *mut Event,
     _nsubscriptions: Size,
     _rp0: *mut Size,
 ) -> Errno {
-    ic_cdk::println!("poll_oneoff");
-
     ERRNO_NOTSUP
 }
-
-// proc
 
 pub fn proc_exit(_rval: Exitcode) -> ! {
     panic!("proc_exit: {_rval}")
 }
 
 pub fn proc_raise(_sig: Signal) -> Errno {
-    ic_cdk::println!("proc_raise");
-
     ERRNO_NOTSUP
 }
 
-// random
-
 pub fn random_get(_buf: *mut u8, _buf_len: Size) -> Errno {
-    ic_cdk::println!("random_get");
-
-    // TODO
-
     ERRNO_SUCCESS
 }
 
-// sched
-
 pub fn sched_yield() -> Errno {
-    ic_cdk::println!("sched_yield");
-
     ERRNO_NOP
 }
 
-// sock
-
 pub fn sock_accept(_fd: Fd, _flags: Fdflags, _rp0: *mut Fd) -> Errno {
-    ic_cdk::println!("sock_accept");
-
     ERRNO_NOTSUP
 }
 
@@ -947,8 +843,6 @@ pub fn sock_recv(
     _rp0: *mut Size,
     _rp1: *mut Roflags,
 ) -> Errno {
-    ic_cdk::println!("sock_recv");
-
     ERRNO_NOTSUP
 }
 
@@ -959,14 +853,10 @@ pub fn sock_send(
     _si_flags: Siflags,
     _rp0: *mut Size,
 ) -> Errno {
-    ic_cdk::println!("sock_send");
-
     ERRNO_NOTSUP
 }
 
 pub fn sock_shutdown(_fd: Fd, _how: Sdflags) -> Errno {
-    ic_cdk::println!("sock_shutdown");
-
     ERRNO_NOTSUP
 }
 
