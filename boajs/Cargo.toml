@@ -10,5 +10,4 @@ crate-type = ["cdylib"]
 boa_engine = "0.20.0"
 candid = "0.10"
 ic-cdk = "0.16"
-ic-cdk-timers = "0.10"
-wasi-shim = { path = "../../wasi-shim" }
+wasi-shim = "0.2.0"
