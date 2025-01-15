@@ -32,7 +32,7 @@ const MICROSECOND: u64 = 1000 * NANOSECOND;
 const MILLISECOND: u64 = 1000 * MICROSECOND;
 const SECOND: u64 = 1000 * MILLISECOND;
 
-use crate::FILESYSTEM;
+use crate::{conv, FILESYSTEM};
 
 pub fn args_get(_argv: *mut *mut u8, _argv_buf: *mut u8) -> Errno {
     ERRNO_NOP
@@ -85,35 +85,35 @@ pub fn fd_advise(fd: Fd, offset: Filesize, len: Filesize, advice: Advice) -> Err
 
     FILESYSTEM.with(|fs| match fs.borrow_mut().advice(fd, offset, len, advice) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
 pub fn fd_allocate(fd: Fd, offset: Filesize, len: Filesize) -> Errno {
     FILESYSTEM.with(|fs| match fs.borrow_mut().allocate(fd, offset, len) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
 pub fn fd_close(fd: Fd) -> Errno {
     FILESYSTEM.with(|fs| match fs.borrow_mut().close(fd) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
 pub fn fd_datasync(fd: Fd) -> Errno {
     FILESYSTEM.with(|fs| match fs.borrow_mut().flush(fd) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
 pub fn fd_fdstat_get(fd: Fd, rp0: *mut Fdstat) -> Errno {
     let (ftype, fdstat) = match FILESYSTEM.with(|fs| fs.borrow().get_stat(fd)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -131,7 +131,7 @@ pub fn fd_fdstat_get(fd: Fd, rp0: *mut Fdstat) -> Errno {
 pub fn fd_fdstat_set_flags(fd: Fd, flags: Fdflags) -> Errno {
     let (_, mut fdstat) = match FILESYSTEM.with(|fs| fs.borrow().get_stat(fd)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     let flags = match StableFsFdFlags::from_bits(flags) {
@@ -143,14 +143,14 @@ pub fn fd_fdstat_set_flags(fd: Fd, flags: Fdflags) -> Errno {
 
     FILESYSTEM.with(|fs| match fs.borrow_mut().set_stat(fd, fdstat) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
 pub fn fd_fdstat_set_rights(fd: Fd, fs_rights_base: Rights, fs_rights_inheriting: Rights) -> Errno {
     let (_, mut fdstat) = match FILESYSTEM.with(|fs| fs.borrow().get_stat(fd)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     fdstat.rights_base = fs_rights_base;
@@ -158,14 +158,14 @@ pub fn fd_fdstat_set_rights(fd: Fd, fs_rights_base: Rights, fs_rights_inheriting
 
     FILESYSTEM.with(|fs| match fs.borrow_mut().set_stat(fd, fdstat) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
 pub fn fd_filestat_get(fd: Fd, rp0: *mut Filestat) -> Errno {
     let md = match FILESYSTEM.with(|fs| fs.borrow().metadata(fd)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -187,7 +187,7 @@ pub fn fd_filestat_get(fd: Fd, rp0: *mut Filestat) -> Errno {
 pub fn fd_filestat_set_size(fd: Fd, size: Filesize) -> Errno {
     FILESYSTEM.with(|fs| match fs.borrow_mut().set_file_size(fd, size) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
@@ -197,8 +197,8 @@ pub fn fd_filestat_set_times(
     mut mtim: Timestamp,
     fst_flags: Fstflags,
 ) -> Errno {
-    if let Err(_err) = FILESYSTEM.with(|fs| fs.borrow().metadata(fd)) {
-        return ERRNO_INVAL; // TODO
+    if let Err(err) = FILESYSTEM.with(|fs| fs.borrow().metadata(fd)) {
+        return conv::error(err);
     };
 
     // ATIM
@@ -207,8 +207,8 @@ pub fn fd_filestat_set_times(
             atim = ic_cdk::api::time()
         };
 
-        if let Err(_err) = FILESYSTEM.with(|fs| fs.borrow_mut().set_accessed_time(fd, atim)) {
-            return ERRNO_INVAL; // TODO
+        if let Err(err) = FILESYSTEM.with(|fs| fs.borrow_mut().set_accessed_time(fd, atim)) {
+            return conv::error(err);
         };
     }
 
@@ -218,8 +218,8 @@ pub fn fd_filestat_set_times(
             mtim = ic_cdk::api::time()
         }
 
-        if let Err(_err) = FILESYSTEM.with(|fs| fs.borrow_mut().set_modified_time(fd, mtim)) {
-            return ERRNO_INVAL; // TODO
+        if let Err(err) = FILESYSTEM.with(|fs| fs.borrow_mut().set_modified_time(fd, mtim)) {
+            return conv::error(err);
         };
     }
 
@@ -246,7 +246,7 @@ pub fn fd_pread(
 
     let s = match FILESYSTEM.with(|fs| fs.borrow_mut().read_vec_with_offset(fd, dst, offset)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -311,7 +311,7 @@ pub fn fd_pwrite(
 
     let s = match FILESYSTEM.with(|fs| fs.borrow_mut().write_vec_with_offset(fd, src, offset)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -335,7 +335,7 @@ pub fn fd_read(fd: Fd, iovs: *const Iovec, iovs_len: i32, rp0: *mut Size) -> Err
 
     let s = match FILESYSTEM.with(|fs| fs.borrow_mut().read_vec(fd, dst)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -359,7 +359,7 @@ pub fn fd_readdir(fd: Fd, buf: *mut u8, buf_len: Size, cookie: Dircookie, rp0: *
 
         let md = match FILESYSTEM.with(|fs| fs.borrow().metadata(fd)) {
             Ok(v) => v,
-            Err(_err) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
 
         let mut idx = match cookie {
@@ -379,12 +379,12 @@ pub fn fd_readdir(fd: Fd, buf: *mut u8, buf_len: Size, cookie: Dircookie, rp0: *
         while let Some(_idx) = idx {
             let e = match fs.get_direntry(fd, _idx) {
                 Ok(v) => v,
-                Err(_err) => return ERRNO_INVAL, // TODO
+                Err(err) => return conv::error(err),
             };
 
             let ftype = match fs.metadata_from_node(e.node) {
                 Ok(v) => v.file_type,
-                Err(_err) => return ERRNO_INVAL, // TODO
+                Err(err) => return conv::error(err),
             };
 
             let p = Dirent {
@@ -431,7 +431,7 @@ pub fn fd_readdir(fd: Fd, buf: *mut u8, buf_len: Size, cookie: Dircookie, rp0: *
 pub fn fd_renumber(fd: Fd, to: Fd) -> Errno {
     FILESYSTEM.with(|fs| match fs.borrow_mut().renumber(fd, to) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
@@ -450,7 +450,7 @@ pub fn fd_seek(fd: Fd, offset: Filedelta, whence: Whence, rp0: *mut Filesize) ->
 
     let s = match FILESYSTEM.with(|fs| fs.borrow_mut().seek(fd, offset, _whence)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -463,7 +463,7 @@ pub fn fd_seek(fd: Fd, offset: Filedelta, whence: Whence, rp0: *mut Filesize) ->
 pub fn fd_sync(fd: Fd) -> Errno {
     FILESYSTEM.with(|fs| match fs.borrow_mut().flush(fd) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
@@ -474,7 +474,7 @@ pub fn fd_tell(fd: Fd, rp0: *mut Filesize) -> Errno {
 
     let p = match FILESYSTEM.with(|fs| fs.borrow_mut().tell(fd)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -498,7 +498,7 @@ pub fn fd_write(fd: Fd, iovs: *const Iovec, iovs_len: i32, rp0: *mut Size) -> Er
 
     let s = match FILESYSTEM.with(|fs| fs.borrow_mut().write_vec(fd, src)) {
         Ok(v) => v,
-        Err(_) => return ERRNO_INVAL, // TODO
+        Err(err) => return conv::error(err),
     };
 
     unsafe {
@@ -522,7 +522,7 @@ pub fn path_create_directory(fd: Fd, path: *const u8, path_len: i32) -> Errno {
             .mkdir(fd, dirname, FdStat::default(), ic_cdk::api::time())
         {
             Ok(_) => ERRNO_SUCCESS,
-            Err(_) => ERRNO_INVAL, // TODO
+            Err(err) => conv::error(err),
         }
     })
 }
@@ -552,7 +552,7 @@ pub fn path_filestat_get(
             ic_cdk::api::time(), // ctime
         ) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
 
         let fs = scopeguard::guard(fs, |mut fs| {
@@ -561,7 +561,7 @@ pub fn path_filestat_get(
 
         let md = match fs.metadata(_fd) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
 
         unsafe {
@@ -608,7 +608,7 @@ pub fn path_filestat_set_times(
             ic_cdk::api::time(), // ctime
         ) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
 
         let mut fs = scopeguard::guard(fs, |mut fs| {
@@ -617,7 +617,7 @@ pub fn path_filestat_set_times(
 
         let mut md = match fs.metadata(_fd) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
 
         // ATIM
@@ -638,8 +638,8 @@ pub fn path_filestat_set_times(
             md.times.modified = mtim;
         }
 
-        if let Err(_err) = fs.set_metadata(fd, md) {
-            return ERRNO_INVAL; // TODO
+        if let Err(err) = fs.set_metadata(fd, md) {
+            return conv::error(err);
         }
 
         ERRNO_SUCCESS
@@ -674,7 +674,7 @@ pub fn path_link(
 
         let _fd = match fs.create_hard_link(old_fd, opath, new_fd, npath) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
         defer! {
             let _ = fs.close(_fd);
@@ -720,7 +720,7 @@ pub fn path_open(
             ic_cdk::api::time(),                   // ctime
         ) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
         defer! {
             let _ = fs.close(_fd);
@@ -755,7 +755,7 @@ pub fn path_remove_directory(fd: Fd, path: *const u8, path_len: i32) -> Errno {
 
     FILESYSTEM.with(|fs| match fs.borrow_mut().remove_dir(fd, fname) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 
@@ -786,7 +786,7 @@ pub fn path_rename(
 
         let _fd = match fs.rename(fd, opath, new_fd, npath) {
             Ok(v) => v,
-            Err(_) => return ERRNO_INVAL, // TODO
+            Err(err) => return conv::error(err),
         };
         defer! {
             let _ = fs.close(_fd);
@@ -816,7 +816,7 @@ pub fn path_unlink_file(fd: Fd, path: *const u8, path_len: i32) -> Errno {
 
     FILESYSTEM.with(|fs| match fs.borrow_mut().remove_file(fd, fname) {
         Ok(_) => ERRNO_SUCCESS,
-        Err(_) => ERRNO_INVAL, // TODO
+        Err(err) => conv::error(err),
     })
 }
 

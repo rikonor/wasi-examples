@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 
-use rusqlite::Connection;
 use stable_fs::{fs::FileSystem, storage::transient::TransientStorage};
 
 mod wasi;
 use wasi::inject_shims;
 
+mod conv;
 mod polyfill;
 
 thread_local! {
@@ -20,11 +20,4 @@ thread_local! {
 #[ic_cdk::init]
 fn init_fn() {
     inject_shims();
-
-    let v: u8 = Connection::open_in_memory()
-        .expect("failed to open connection")
-        .query_row("SELECT 1", [], |r| r.get(0))
-        .expect("failed to query");
-
-    ic_cdk::println!("{v}");
 }
