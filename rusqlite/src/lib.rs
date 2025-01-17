@@ -40,6 +40,12 @@ thread_local! {
     }
 }
 
+thread_local! {
+    pub static CONN: RefCell<Connection> = RefCell::new({
+        Connection::open("db.sqlite3").expect("failed to open connection")
+    });
+}
+
 #[ic_cdk::pre_upgrade]
 fn pre_upgrade_fn() {
     let bs = FILESYSTEM.with(|fs| {
@@ -78,52 +84,47 @@ fn post_upgrade_fn() {
 fn init_fn() {
     inject_shims();
 
-    let conn = Connection::open("db.sqlite3").expect("failed to open connection");
+    CONN.with(|conn| {
+        let conn = conn.borrow_mut();
 
-    let q = "
-        CREATE TABLE persons (
-            id   INTEGER PRIMARY KEY,
-            name TEXT    NOT NULL
-        )
-    ";
+        let q = "
+            CREATE TABLE persons (
+                id   INTEGER PRIMARY KEY,
+                name TEXT    NOT NULL
+            )
+        ";
 
-    conn.execute(q, []).expect("failed to execute");
+        conn.execute(q, []).expect("failed to execute");
 
-    let q = "INSERT INTO persons (name) VALUES (?1)";
+        let q = "INSERT INTO persons (name) VALUES (?1)";
 
-    conn.execute(q, ["Or"]).expect("failed to execute");
-    conn.execute(q, ["Laura"]).expect("failed to execute");
-    conn.execute(q, ["Jacob"]).expect("failed to execute");
-    conn.execute(q, ["Sadie"]).expect("failed to execute");
+        conn.execute(q, ["Or"]).expect("failed to execute");
+        conn.execute(q, ["Laura"]).expect("failed to execute");
+        conn.execute(q, ["Jacob"]).expect("failed to execute");
+        conn.execute(q, ["Sadie"]).expect("failed to execute");
+    });
 }
 
 #[ic_cdk::query]
 fn trigger_query() {
-    let conn = Connection::open("db.sqlite3").expect("failed to open connection");
+    CONN.with(|conn| {
+        let conn = conn.borrow_mut();
 
-    struct Person {
-        id: i32,
-        name: String,
-    }
+        let mut stmt = conn
+            .prepare("SELECT id, name FROM persons")
+            .expect("failed to prepare statement");
 
-    let q = "
-        SELECT id, name
-        FROM persons
-    ";
+        let f = |r: &Row| {
+            Ok((
+                r.get(0).expect("failed to get column"), // id
+                r.get(1).expect("failed to get column"), // name
+            ))
+        };
 
-    let mut stmt = conn.prepare(q).expect("failed to prepare statement");
-
-    let f = |r: &Row| {
-        Ok(Person {
-            id: r.get(0).expect("failed to get column"),
-            name: r.get(1).expect("failed to get column"),
-        })
-    };
-
-    let ps = stmt.query_map([], f).expect("failed to query");
-    for p in ps {
-        let p = p.expect("failed to read row");
-
-        ic_cdk::println!("{} {}", p.id, p.name);
-    }
+        let ps = stmt.query_map([], f).expect("failed to query");
+        for p in ps {
+            let (id, name): (i32, String) = p.expect("failed to read row");
+            ic_cdk::println!("{} {}", id, name);
+        }
+    });
 }
