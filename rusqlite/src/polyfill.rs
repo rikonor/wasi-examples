@@ -722,9 +722,6 @@ pub fn path_open(
             Ok(v) => v,
             Err(err) => return conv::error(err),
         };
-        defer! {
-            let _ = fs.close(_fd);
-        }
 
         unsafe {
             *rp0 = _fd;
