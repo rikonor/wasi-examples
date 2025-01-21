@@ -14,7 +14,4 @@ scopeguard = "1.2.0"
 wasi-shim = "0.2.0"
 ic-stable-structures = "0.6.7"
 stable-fs = "0.7.0"
-rusqlite = { git = "https://github.com/rusqlite/rusqlite.git", rev = "903677bda605029d53a46bf546ab53240191a30f", features = [
-    "bundled",
-    "wasm32-wasi-vfs",
-] }
+rusqlite = { version = "0.33.0", features = ["bundled", "wasm32-wasi-vfs"] }
