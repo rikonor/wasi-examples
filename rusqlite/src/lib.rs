@@ -128,3 +128,12 @@ fn trigger_query() {
         }
     });
 }
+
+#[ic_cdk::update]
+fn insert_row(name: String) {
+    CONN.with(|conn| {
+        conn.borrow_mut()
+            .execute("INSERT INTO persons (name) VALUES (?1)", [&name])
+            .expect("failed to execute");
+    });
+}

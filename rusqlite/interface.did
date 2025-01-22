@@ -1,3 +1,4 @@
 service : {
     "trigger_query" : () -> () query;
+    "insert_row" : (name : text) -> ();
 };
